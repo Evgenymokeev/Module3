@@ -1,10 +1,67 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<main class="main">
+    <ul class="test">
+        <li class="zara1">VERSACE</li>
+        <li class="zara2">ZARA</li>
+        <li class="zara3">GUCCI</li>
+        <li class="zara4">PRADA</li>
+        <li class="zara5">Calvin Klein</li>
+    </ul>
+
+    <p class="para">NEW ARRIVALS</p>
+
+    <div class="product-list">
+       {% for product in products %}
+    <div class="product-card">
+<!--        <a href="{% url 'product_detail' pk=product.id %}">-->
+        <h3>
+            <a href="{% url 'product_detail' pk=product.id %}">
+                {{ product.name }}
+            <p>Product ID: {{ product.id }}</p>
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <img src="{% static 'default-image.jpg' %}" alt="No image available">
+            {% endif %}
+<!--        </a>-->
+<!--        <h3>-->
+<!--            <a href="{% url 'product_detail' pk=product.id %}">-->
+<!--                {{ product.name }}-->
+            </a>
+        </h3>
+            <h3>
+                <a href="{% url 'product_update' pk=product.id %}">Update product</a>
+
+            </h3>
+        <h3>
+                <a href="{% url 'return_list' pk=product.id %}">Return product</a>
+
+            </h3>
+            <p>{{ product.price }} BDT</p>
+            <p>{{ product.get_short_description }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if is_paginated %}
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}

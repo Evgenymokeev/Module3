@@ -1,10 +1,86 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <title>{% block title %}Shop{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'idex.css' %}">
 </head>
 <body>
-$END$
+<header class="header">
+    {% block header %}
+    <ul class="list">
+          <li class="item2"><h5>Sign Up Now</h5></li>
+
+
+    </ul>
+    <nav>
+
+<button class="line">
+    <a href="{% url 'product_create' %}">Create Product</a>
+</button>
+
+
+
+    </nav>
+    {% endblock %}
+</header>
+<main>
+    {% block content %}
+    {% endblock %}
+</main>
+<footer class="footer">
+    {% block footer %}
+    <nav class="navigation5">
+        <section class="gray2">
+          <ul class="text3">
+            <h2>SHOP.CO</h2>
+            <li class="link6">
+              We have clothes that your style and which you're proud to wear.
+              From women to men.
+
+
+            </li>
+          </ul>
+          <ul class="text4">
+            <h3 class="line4">Company</h3>
+            <li class="link3">About</li>
+            <li class="link3">Features</li>
+            <li class="link3">Works</li>
+            <li class="link3">Career</li>
+          </ul>
+          <ul class="text5">
+            <h3 class="line4">FAQ</h3>
+            <li class="link3">Account</li>
+            <li class="link3">Manage Deliveres</li>
+            <li class="link3">Orders</li>
+            <li class="link3">Payments</li>
+          </ul>
+          <ul class="text6">
+            <h3 class="line4">Resource</h3>
+            <li class="link3">Free eBooks</li>
+            <li class="link3">Development Tutorial</li>
+            <li class="link3">How to-Blog</li>
+            <li class="link3">Youtube Playlist</li>
+          </ul>
+        </section>
+        <hr class="outline">
+        <ul class="trek">
+          <li class="link3">Shop.co © 2000-2023. AllRigts Reserved</li>
+
+        </ul>
+        <section class=""></section>
+      </nav>
+      <section class="black">
+        <ul class="black2">
+          <p class="shop1">SHOP.CO</p>
+
+        </ul>
+        <div class="black3">
+
+        </div>
+      </section>
+    {% endblock %}
+</footer>
 </body>
 </html>
