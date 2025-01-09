@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block content %}
+<main class="main">
+  <div class="form-container">
+    <h1>Create Product:</h1>
+
+    <form method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+
+      {% if form.errors %}
+        <div class="error">
+          <ul>
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li>{{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <button type="submit">Create</button>
+    </form>
+      <p class="para">Create Product</p>
+  </div>
+{% endblock %}
+</main>

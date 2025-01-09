@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<main class="main">
+    <div class="profile-container">
+        <h1 class="profile-title">User Profile</h1>
+
+
+        <div class="user-details">
+            <div class="avatar-container">
+                {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" alt="{{ user.username }}'s Avatar" class="user-avatar">
+                {% else %}
+                    <img src="{% static 'default-avatar.jpg' %}" alt="Default Avatar" class="user-avatar">
+                {% endif %}
+            </div>
+            <div class="user-info">
+                <p><strong>Username:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email }}</p>
+                <p><strong>Wallet Balance:</strong> BDT {{ wallet }}</p>
+            </div>
+        </div>
+
+
+        <div class="profile-section">
+            <h2>Your Transactions</h2>
+
+
+            <div class="purchases">
+                <h3>Your Purchases</h3>
+                {% if purchases %}
+                    <ul class="transaction-list">
+                        {% for purchase in purchases %}
+                            <li class="transaction-item">
+                                <div class="product-details">
+                                    <div class="product-image-container">
+                                        {% if purchase.product.image %}
+                                            <img src="{{ purchase.product.image.url }}" alt="{{ purchase.product.name }}" class="product-image">
+                                        {% else %}
+                                            <img src="{% static 'default-image.jpg' %}" alt="No image available" class="product-image">
+                                        {% endif %}
+                                    </div>
+                                    <div class="transaction-info">
+                                        <h4>{{ purchase.product.name }}</h4>
+                                        <p><strong>Quantity:</strong> {{ purchase.quantity }}</p>
+                                        <p><strong>Total Price:</strong> BDT {{ purchase.get_total_price }}</p>
+                                        <p><strong>Purchase Time:</strong> {{ purchase.created_at|date:"Y-m-d H:i" }}</p>
+
+                                        {% if purchase.returned %}
+                                            <p class="return-status">Return Status: <span class="returned">Returned</span></p>
+                                        {% else %}
+                                            {% with current_time|date:"U" as current_time_unix %}
+                                                {% with purchase.created_at|date:"U" as purchase_time_unix %}
+                                                    {% if current_time_unix|add:"-{{ purchase_time_unix }}" > 180 %}
+                                                        <p class="error-message">Return window has expired. The product can no longer be returned.</p>
+                                                    {% else %}
+                                                        <form method="POST" action="{% url 'return_purchase' purchase.id %}" onsubmit="return confirm('Are you sure you want to request a return for this product?');">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-return">Request Return</button>
+                                                        </form>
+                                                    {% endif %}
+                                                {% endwith %}
+                                            {% endwith %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>You have no purchases yet.</p>
+                {% endif %}
+            </div>
+
+
+            <div class="returns">
+                <h3>Your Returns</h3>
+                {% if returns %}
+                    <ul class="transaction-list">
+                        {% for return_request in returns %}
+                            <li class="transaction-item">
+                                <div class="product-details">
+                                    <h4>{{ return_request.purchase.product.name }}</h4>
+                                    <p><strong>Quantity:</strong> {{ return_request.purchase.quantity }}</p>
+                                    <p><strong>Request Time:</strong> {{ return_request.created_at|date:"Y-m-d H:i" }}</p>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p>You have no return requests yet.</p>
+                {% endif %}
+            </div>
+        </div>
+
+
+        <div class="actions">
+            <a href="{% url 'logout' %}" class="btn btn-danger">Logout</a>
+        </div>
+         <p class="para">Hello {{ user.username }}</p>
+    </div>
+</main>
+{% endblock %}
+
+
+

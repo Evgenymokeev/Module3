@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<main class="main">
+
+<div class="table-container">
+    <h1>Return Requests</h1>
+
+    {% if messages %}
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>User</th>
+                <th>Request Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for return in returns %}
+            <tr>
+                <td>{{ return.purchase.product.name }}</td>
+                <td>{{ return.purchase.quantity }}</td>
+                <td>{{ return.purchase.user.username }}</td>
+                <td>{{ return.created_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="return_id" value="{{ return.id }}">
+                        <button type="submit" name="action" value="approve">Approve</button>
+                        <button type="submit" name="action" value="reject">Reject</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No return requests found.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+      <p class="para">Return Product</p>
+</div>
+{% endblock %}
+</main>

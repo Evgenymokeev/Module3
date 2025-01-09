@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<main class="main">
+    <ul class="test">
+        <li class="zara1">VERSACE</li>
+        <li class="zara2">ZARA</li>
+        <li class="zara3">GUCCI</li>
+        <li class="zara4">PRADA</li>
+        <li class="zara5">Calvin Klein</li>
+    </ul>
+
+ <p class="para">NEW ARRIVALS</p>
+
+    <div class="product-list">
+       {% for product in products %}
+    <div class="product-card">
+
+
+
+
+
+
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% else %}
+                <img src="{% static 'default-image.jpg' %}" alt="No image available">
+             {% endif %}
+
+
+{% if user.is_authenticated %}
+        <h3 style="height: 40px;
+  width: 90%;
+  background-color:black;
+  color:  white;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 0 20px;
+">
+            <a style="
+  color:  white;
+ " href="{% url 'product_detail' pk=product.id %}">
+      {{ product.name }}       </a>
+        </h3>
+{% endif %}
+
+        {% if user.is_superuser %}
+            <h3 style="height: 40px;
+  width: 90%;
+  background-color:plum;
+  color:  white;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 0 20px;
+">
+                <a style="
+  color:  white;
+  " href="{% url 'product_update' pk=product.id %}">Update product</a>
+
+        
+{%endif%}
+            <h3>{{ product.price }} BDT</h3>
+
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="pagination">
+        {% if is_paginated %}
+            <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a href="?page=1">&laquo; first</a>
+                    <a href="?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="current">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}.
+                </span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}">next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
+            </span>
+        {% endif %}
+<p class="para">BEST COLLECTION</p>
+    </div>
+{% endblock %}
+</main>
+
+
