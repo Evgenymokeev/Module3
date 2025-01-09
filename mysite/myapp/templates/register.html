@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<main class="main">
+
+  <div class="form-container">
+    <h1>Register</h1>
+
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="message">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="btn btn-primary">Register</button>
+    </form>
+
+    <span>Already have an account? <a href="{% url 'login' %}">Login</a></span>
+    <p class="para">Register</p>
+  </div>
+</main>
+{% endblock %}
+

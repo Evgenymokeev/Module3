@@ -11,37 +11,61 @@
         <li class="zara5">Calvin Klein</li>
     </ul>
 
-    <p class="para">NEW ARRIVALS</p>
+ <p class="para">NEW ARRIVALS</p>
 
     <div class="product-list">
        {% for product in products %}
     <div class="product-card">
-<!--        <a href="{% url 'product_detail' pk=product.id %}">-->
-        <h3>
-            <a href="{% url 'product_detail' pk=product.id %}">
-                {{ product.name }}
-            <p>Product ID: {{ product.id }}</p>
+
+
+
+
+
+
             {% if product.image %}
                 <img src="{{ product.image.url }}" alt="{{ product.name }}">
             {% else %}
                 <img src="{% static 'default-image.jpg' %}" alt="No image available">
-            {% endif %}
-<!--        </a>-->
-<!--        <h3>-->
-<!--            <a href="{% url 'product_detail' pk=product.id %}">-->
-<!--                {{ product.name }}-->
-            </a>
+             {% endif %}
+
+
+{% if user.is_authenticated %}
+        <h3 style="height: 40px;
+  width: 90%;
+  background-color:black;
+  color:  white;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 0 20px;
+">
+            <a style="
+  color:  white;
+ " href="{% url 'product_detail' pk=product.id %}">
+      {{ product.name }}       </a>
         </h3>
-            <h3>
-                <a href="{% url 'product_update' pk=product.id %}">Update product</a>
+{% endif %}
 
-            </h3>
-        <h3>
-                <a href="{% url 'return_list' pk=product.id %}">Return product</a>
+        {% if user.is_superuser %}
+            <h3 style="height: 40px;
+  width: 90%;
+  background-color:plum;
+  color:  white;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 0 20px;
+">
+                <a style="
+  color:  white;
+  " href="{% url 'product_update' pk=product.id %}">Update product</a>
 
-            </h3>
-            <p>{{ product.price }} BDT</p>
-            <p>{{ product.get_short_description }}</p>
+        
+{%endif%}
+            <h3>{{ product.price }} BDT</h3>
+
         </div>
         {% endfor %}
     </div>
@@ -62,6 +86,9 @@
                 {% endif %}
             </span>
         {% endif %}
+<p class="para">BEST COLLECTION</p>
     </div>
-</main>
 {% endblock %}
+</main>
+
+

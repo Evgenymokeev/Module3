@@ -1,8 +1,7 @@
 from django import forms
-from .models import Product, User, Return
+from .models import Product, User, Return, Purchase
 
-class PurchaseForm(forms.Form):
-    quantity = forms.IntegerField(min_value=1, initial=1)
+
 
 
 class ProductForm(forms.ModelForm):
@@ -50,10 +49,7 @@ class ReturnProduct(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields['quantity'].widget.attrs['class'] = 'form-control'
 
-class UserForm(forms.Form):
-    class Meta:
-        model = User
-        fields = ['username', 'password']
+
 
 class CreateProduct(forms.ModelForm):
     class Meta:
@@ -64,3 +60,50 @@ class ReturnRequestForm(forms.ModelForm):
     class Meta:
         model = Return
         fields = ['purchase']
+
+class UserCreationForm(forms.ModelForm):
+    password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
+    password2 = forms.CharField(label="Password confirmation", widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        fields = ("username", "email",)
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 != password2:
+            raise forms.ValidationError("The two password fields didn't match.")
+        return password2
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        if commit:
+            user.save()
+        return user
+
+
+
+class PurchaseForm(forms.ModelForm):
+    class Meta:
+        model = Purchase
+        fields = ['quantity']
+
+    def __init__(self, *args, **kwargs):
+        self.product = kwargs.pop('product', None)
+        self.user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_quantity(self):
+        quantity = self.cleaned_data.get('quantity')
+
+
+        if self.product and quantity > self.product.quantity_in_stock:
+            raise forms.ValidationError("Недостаточное количество товара на складе.")
+
+
+        if self.user and self.user.wallet < (self.product.price * quantity):
+            raise forms.ValidationError("Недостаточно средств в кошельке.")
+
+        return quantity

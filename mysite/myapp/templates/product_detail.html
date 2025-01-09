@@ -1,26 +1,41 @@
-
-
+{% extends 'base.html' %}
 {% load static %}
-
 {% block content %}
-    <h1>{{ product.name }}</h1>
-  <p>Description: {{ product.description }}</p>
-  <p>Price: {{ product.price }}</p>
-  <p>In stock: {{ product.quantity_in_stock }}</p>
-{% if product.image %}
-            <img src="{{ product.image.url }}" alt="{{ product.name }}">
-        {% else %}
-            <img src="{% static 'default-image.jpg' %}" alt="No image available">
-        {% endif %}
-  {% if message %}
-    <div class="alert alert-danger">{{ message }}</div>
-  {% endif %}
+<main class="main">
 
+<div class="product-detail">
+    <h1 class="product-title">{{ product.name }}</h1>
+    <p class="product-description">Description: {{ product.description }}</p>
+    <p class="product-price">Price: <strong>BDT {{ product.price }}</strong></p>
+    <p class="product-stock">In stock: <strong>{{ product.quantity_in_stock }}</strong></p>
 
+    {% if product.image %}
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+    {% else %}
+        <img src="{% static 'default-image.jpg' %}" alt="No image available" class="product-image">
+    {% endif %}
 
-    <form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Buy</button>
-  </form>
+    {% if message %}
+        <div class="alert alert-danger">{{ message }}</div>
+    {% endif %}
+
+    <form method="POST" class="purchase-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-buy">Купить</button>
+    </form>
+
+    {% if messages %}
+        <ul class="message-list">
+            {% for message in messages %}
+                <li class="message-item">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+<p class="para">BEST COLLECTION</p>
+</div>
+
 {% endblock %}
+</main>
+
+

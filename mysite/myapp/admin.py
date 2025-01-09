@@ -1,17 +1,17 @@
 from django.contrib import admin
+from django.contrib.auth.mixins import UserPassesTestMixin
 from .models import User, Product, Purchase, Return
 
+class AdminRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_superuser
 
-
-
-
-class ProductAdmin(admin.ModelAdmin):
+class ProductAdmin(AdminRequiredMixin, admin.ModelAdmin):
     list_display = ('name', 'price', 'quantity_in_stock', 'created_at', 'updated_at')
     search_fields = ('name',)
     list_filter = ('created_at',)
 
-
-class ReturnAdmin(admin.ModelAdmin):
+class ReturnAdmin(AdminRequiredMixin, admin.ModelAdmin):
     list_display = ('purchase', 'created_at')
     actions = ['approve_return', 'reject_return']
 
@@ -29,6 +29,7 @@ class ReturnAdmin(admin.ModelAdmin):
         queryset.delete()
 
 admin.site.register(User)
-admin.site.register(Product)
+admin.site.register(Product, ProductAdmin)
 admin.site.register(Purchase)
-admin.site.register(Return)
+admin.site.register(Return, ReturnAdmin)
+

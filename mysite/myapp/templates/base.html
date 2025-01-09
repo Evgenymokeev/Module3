@@ -1,26 +1,94 @@
-{% load static %}
+
 <!DOCTYPE html>
+{% load static %}
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Shop{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'idex.css' %}">
+    <link rel="stylesheet" href="{% static 'index.css' %}">
 </head>
 <body>
 <header class="header">
     {% block header %}
-    <ul class="list">
-          <li class="item2"><h5>Sign Up Now</h5></li>
 
 
-    </ul>
+
     <nav>
+        {% if user.is_authenticated %}
+<button style="height: 60px;
+  width: 355px;
+  background-color:black;
+  color:  white;
+  border-radius: 40px;">
+    <a style="font-size: 25px" href="{% url 'profile' %}">Profile</a>
 
-<button class="line">
-    <a href="{% url 'product_create' %}">Create Product</a>
+</button>
+{% endif %}
+
+{% if user.is_superuser %}
+<button style="height: 60px;
+  width: 355px;
+  background-color:black;
+  color:  white;
+  border-radius: 40px;">
+    <a style="font-size: 25px" href="{% url 'product_create' %}">Create Product</a>
+
+</button>
+        {% endif %}
+<button style="height: 60px;
+  width: 355px;
+  background-color:black;
+  color:  white;
+  border-radius: 40px;">
+    <a style="font-size: 25px" href="{% url 'register' %}">Sign Up Now</a>
+</button>
+        <button style="height: 60px;
+  width: 355px;
+  background-color:black;
+  color:  white;
+  border-radius: 40px;">
+    <a style="font-size: 25px" href="{% url 'logout' %}">Logout</a>
+
 </button>
 
 
+<button style="height: 60px;
+  width: 355px;
+  background-color:black;
+  color:  white;
+  border-radius: 40px;">
+    <a style="font-size: 25px" href="{% url 'login' %}">Login</a>
+
+</button>
+
+        {% if user.is_superuser %}
+        <button style="height: 60px;
+  width: 355px;
+  background-color:black;
+  color:  white;
+  border-radius: 40px;">
+    <a style="font-size: 25px" href="{% url 'product_list' %}">Stock</a>
+            </button>
+        {% endif %}
+
+{% if user.is_authenticated %}
+        <button style="height: 60px;
+  width: 355px;
+  margin: 5px;
+  background-color:black;
+  color:  white;
+  border-radius: 40px;">
+    <a style="font-size: 25px" href="{% url 'main' %}">Main</a>
+            </button>
+{% endif %}
+
+{% if user.is_superuser %}
+    <button style="height: 60px; width: 355px; background-color: black; color: white; border-radius: 40px;">
+        <a style="font-size: 25px; color: blue; text-decoration: none;" href="{% url 'return_list' %}">
+             Returns Product
+        </a>
+    </button>
+{% endif %}
 
     </nav>
     {% endblock %}
@@ -29,6 +97,8 @@
     {% block content %}
     {% endblock %}
 </main>
+</hr>
+
 <footer class="footer">
     {% block footer %}
     <nav class="navigation5">
