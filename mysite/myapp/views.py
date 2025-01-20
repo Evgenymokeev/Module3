@@ -19,6 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.utils.timezone import now
 from datetime import timedelta
+from django.views.decorators.cache import cache_page
 
 
 
@@ -65,11 +66,13 @@ class ProductDetailView(DetailView):
     context_object_name = 'product'
 
     def post(self, request, *args, **kwargs):
+        self.object = self.get_object()  # Устанавливаем объект
+
         if not request.user.is_authenticated:
             messages.error(request, "Вы должны быть авторизованы для совершения покупки.")
             return HttpResponseRedirect(reverse('login'))
 
-        product = self.get_object()
+        product = self.object
         form = PurchaseForm(request.POST, product=product, user=request.user)
 
         if form.is_valid():
@@ -80,34 +83,29 @@ class ProductDetailView(DetailView):
             quantity = form.cleaned_data['quantity']
             total_price = product.price * quantity
 
-
+            # Проверяем кошелек пользователя
             if request.user.wallet < total_price:
                 messages.error(request, "У вас недостаточно средств для покупки.")
                 return self.render_to_response(self.get_context_data(form=form))
 
-
+            # Проверяем наличие товара
             if quantity > product.quantity_in_stock:
                 messages.error(request, "Недостаточно товара на складе.")
                 return self.render_to_response(self.get_context_data(form=form))
 
-
-            purchase.save()
-            product.reduce_stock(quantity)
-            request.user.update_wallet(-total_price)
-
-            messages.success(request, "Покупка успешно совершена!")
-            return HttpResponseRedirect(reverse('profile'))
+            # Совершаем покупку
+            try:
+                product.reduce_stock(quantity)
+                request.user.update_wallet(-total_price)
+                purchase.save()
+                messages.success(request, "Покупка успешно совершена!")
+                return HttpResponseRedirect(reverse('profile'))
+            except ValueError as e:
+                messages.error(request, str(e))
+                return self.render_to_response(self.get_context_data(form=form))
         else:
             messages.error(request, "Произошла ошибка при оформлении покупки.")
             return self.render_to_response(self.get_context_data(form=form))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.request.user.is_authenticated:
-            context['form'] = PurchaseForm(product=self.object, user=self.request.user)
-        else:
-            context['form'] = PurchaseForm()
-        return context
 
 
 class ProductCreateView(CreateView):
@@ -188,6 +186,42 @@ class ReturnActionMixin:
     def reject_return(self, return_request):
         return_request.delete()
 
+# class ReturnListView(UserPassesTestMixin, ListView):
+#     model = Return
+#     template_name = 'return_list.html'
+#     context_object_name = 'returns'
+#
+#     def test_func(self):
+#         return self.request.user.is_superuser
+#
+#     def post(self, request, *args, **kwargs):
+#         return_id = request.POST.get('return_id')
+#         action = request.POST.get('action')
+#         try:
+#             return_request = Return.objects.get(id=return_id)
+#             if action == 'approve':
+#                 self.approve_return(return_request)
+#                 messages.success(request, "Return approved successfully.")
+#             elif action == 'reject':
+#                 self.reject_return(return_request)
+#                 messages.success(request, "Return rejected.")
+#         except Return.DoesNotExist:
+#             messages.error(request, "Return request not found.")
+#         return redirect('return_list')
+#
+#     def approve_return(self, return_request):
+#         product = return_request.purchase.product
+#         product.quantity_in_stock += return_request.purchase.quantity
+#         product.save()
+#         user = return_request.purchase.user
+#         user.wallet += return_request.purchase.get_total_price()
+#         user.save()
+#         return_request.purchase.delete()
+#         return_request.delete()
+#
+#     def reject_return(self, return_request):
+#         return_request.delete()
+
 class ReturnListView(UserPassesTestMixin, ListView):
     model = Return
     template_name = 'return_list.html'
@@ -203,23 +237,71 @@ class ReturnListView(UserPassesTestMixin, ListView):
             return_request = Return.objects.get(id=return_id)
             if action == 'approve':
                 self.approve_return(return_request)
-                messages.success(request, "Return approved successfully.")
+                messages.success(request, "Возврат успешно одобрен.")
             elif action == 'reject':
                 self.reject_return(return_request)
-                messages.success(request, "Return rejected.")
+                messages.success(request, "Возврат отклонен.")
         except Return.DoesNotExist:
-            messages.error(request, "Return request not found.")
+            messages.error(request, "Запрос на возврат не найден.")
         return redirect('return_list')
 
+    # def approve_return(self, return_request):
+    #     product = return_request.product
+    #     purchase = return_request.purchase
+    #     user = purchase.user
+    #
+    #     # Проверяем, чтобы количество возврата не превышало количество покупки
+    #     if return_request.quantity > purchase.quantity:
+    #         messages.error(self.request, "Запрос на возврат превышает количество покупки.")
+    #         return
+    #
+    #     # Обновляем склад
+    #     product.quantity_in_stock += return_request.quantity
+    #     product.save()
+    #
+    #     # Возвращаем деньги пользователю
+    #     refund_amount = return_request.quantity * product.price
+    #     user.wallet += refund_amount
+    #     user.save()
+    #
+    #     # Обновляем или удаляем покупку
+    #     if return_request.quantity == purchase.quantity:
+    #         purchase.delete()
+    #     else:
+    #         purchase.quantity -= return_request.quantity
+    #         purchase.save()
+    #
+    #     # Удаляем запрос на возврат
+    #     return_request.delete()
+
     def approve_return(self, return_request):
-        product = return_request.purchase.product
-        product.quantity_in_stock += return_request.purchase.quantity
-        product.save()
-        user = return_request.purchase.user
-        user.wallet += return_request.purchase.get_total_price()
+        product = return_request.product
+        purchase = return_request.purchase
+        user = purchase.user
+
+        # Проверяем, чтобы количество возврата не превышало количество покупки
+        if return_request.quantity > purchase.quantity:
+            messages.error(self.request, "Запрос на возврат превышает количество покупки.")
+            return
+
+        # Возвращаем товар на склад
+        product.reduce_stock(return_request.quantity, is_return=True)
+
+        # Возвращаем деньги пользователю
+        refund_amount = return_request.quantity * product.price
+        user.wallet += refund_amount
         user.save()
-        return_request.purchase.delete()
+
+        # Обновляем покупку или удаляем её
+        if return_request.quantity == purchase.quantity:
+            purchase.delete()
+        else:
+            purchase.quantity -= return_request.quantity
+            purchase.save()
+
+        # Удаляем запрос на возврат
         return_request.delete()
+        messages.success(self.request, "Возврат успешно одобрен.")
 
     def reject_return(self, return_request):
         return_request.delete()

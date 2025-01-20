@@ -64,23 +64,26 @@ class Product(models.Model):
     def get_absolute_url(self):
         return reverse('product_detail', kwargs={'pk': self.id})
 
-    def reduce_stock(self, quantity):
-        if self.quantity_in_stock >= quantity:
-            self.quantity_in_stock -= quantity
-            self.save()
-        else:
+    def reduce_stock(self, quantity, is_return=False):
+        if not is_return and quantity > self.quantity_in_stock:
             raise ValueError("Not enough stock.")
-
+        if is_return:
+            self.quantity_in_stock += quantity
+        else:
+            self.quantity_in_stock -= quantity
+        self.save()
 
     def available_quantity(self):
-        returned_quantity = Return.objects.filter(product=self).aggregate(total_returned=models.Sum('quantity'))[
-                                'total_returned'] or 0
+        returned_quantity = Return.objects.filter(product=self).aggregate(
+            total_returned=models.Sum('quantity')
+        )['total_returned'] or 0
         return self.quantity_in_stock + int(returned_quantity)
 
     def save(self, *args, **kwargs):
         if self.quantity_in_stock < 0:
             self.quantity_in_stock = 0
         super().save(*args, **kwargs)
+
 
 class Purchase(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -97,10 +100,6 @@ class Purchase(models.Model):
         return f"{self.user.username} - {self.product.name} ({self.quantity})"
 
     def save(self, *args, **kwargs):
-        if not self.pk:  # Только при создании
-            if self.quantity > self.product.quantity_in_stock:
-                raise ValueError("Not enough stock for this purchase.")
-            self.product.reduce_stock(self.quantity)
         super().save(*args, **kwargs)
 
 class Return(models.Model):
@@ -111,7 +110,9 @@ class Return(models.Model):
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
-
+    def clean(self):
+        if self.quantity > self.purchase.quantity:
+            raise ValueError("Количество возврата превышает количество покупки.")
 
     def __str__(self):
         return f"Return request by {self.purchase.user.username} for {self.purchase.product.name}"
