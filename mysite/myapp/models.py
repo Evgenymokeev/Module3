@@ -1,6 +1,6 @@
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import ValidationError
@@ -41,10 +41,11 @@ class User(AbstractUser):
         return self.username
 
     def update_wallet(self, amount):
-        if self.wallet + amount < 0:
-            raise ValueError("There are not enough funds in your wallet.")
-        self.wallet += amount
-        self.save()
+        with transaction.atomic():
+            if self.wallet + amount < 0:
+                raise ValueError("Insufficient funds.")
+            self.wallet += amount
+            self.save()
 
 class Product(models.Model):
     name = models.CharField(max_length=200)
@@ -101,6 +102,12 @@ class Purchase(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+    def validate_purchase(self):
+        if self.quantity > self.product.quantity_in_stock:
+            raise ValueError("Insufficient stock.")
+        if self.user.wallet < self.get_total_price():
+            raise ValueError("Insufficient funds.")
 
 class Return(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
