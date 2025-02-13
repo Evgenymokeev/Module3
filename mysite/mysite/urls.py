@@ -15,8 +15,41 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path,include
+from rest_framework.routers import DefaultRouter
+from django.conf import settings
+from django.conf.urls.static import static
+from myapp.views import ProductListView,ProductDetailView,  ProductCreateView, ProductUpdateView,ReturnListView,Login,UserRegisterView,custom_logout,profile_view,request_return, product_list
+from myapp.api.resources import ReturnViewSet, PurchaseViewSet, ProductViewSet
+from myapp.api.serializers import CustomAuthToken
+from rest_framework.authtoken.views import obtain_auth_token
+
+router = DefaultRouter()
+router.register(r'products', ProductViewSet)
+router.register(r'purchases', PurchaseViewSet)
+router.register(r'returns', ReturnViewSet)
 
 urlpatterns = [
+path('api/token/', obtain_auth_token),
+    path('api-token-auth/', CustomAuthToken.as_view()),
+    path('api/', include(router.urls)),
+path('product/return/<int:pk>/', ReturnListView.as_view(), name='return_list'),
+    path('return_purchase/<int:purchase_id>/', request_return, name='return_purchase'),
+path('products/', product_list, name='product_list'),
+    path('profile/', profile_view, name='profile'),
+    path('', ProductListView.as_view(), name='main'),
+    path('product/<int:pk>/', ProductDetailView.as_view(), name='product_detail'),
+    path('produkt/create/', ProductCreateView.as_view(), name='product_create'),
+    path('produkt/<int:pk>/update/', ProductUpdateView.as_view(), name='product_update'),
+    path('returns/', ReturnListView.as_view(), name='return_list'),
+path('login/', Login.as_view(), name='login'),
+path('register/', UserRegisterView.as_view(), name='register'),
+path('logout/', custom_logout, name='logout'),
     path('admin/', admin.site.urls),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+

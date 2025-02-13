@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<main class="main">
+
+  <div class="form-container">
+    <h1>Login</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form }}
+
+        <input type="submit" value="Login">
+    </form>
+
+    <span>Wanna register? <a href="{% url 'register' %}">Sign Up</a></span>
+      <p class="para">Login</p>
+  </div>
+{% endblock %}
+</main>
+
