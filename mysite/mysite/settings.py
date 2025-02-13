@@ -84,6 +84,9 @@ DATABASES = {
         'PASSWORD': 'mypass',
         'HOST': 'localhost',
         'PORT': '5432',
+'TEST': {
+            'NAME': 'mytestdatabase',
+        },
     }
 }
 
@@ -133,7 +136,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 STATICFILES_DIRS = [BASE_DIR/'static']
 
 
-STATIC_ROOT = 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / "media"
@@ -146,18 +150,16 @@ CACHES = {
     }
 }
 
+TOKEN_EXPIRE_SECONDS = 600
+
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': [
         'rest_framework.renderers.JSONRenderer',
     ],
     'DEFAULT_PARSER_CLASSES': [
         'rest_framework.parsers.JSONParser',
-    ]
-}
-
-REST_FRAMEWORK = {
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-
         'rest_framework.authentication.TokenAuthentication',
     ]
 }

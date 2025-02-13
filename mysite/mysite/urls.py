@@ -22,7 +22,7 @@ from django.conf.urls.static import static
 from myapp.views import ProductListView,ProductDetailView,  ProductCreateView, ProductUpdateView,ReturnListView,Login,UserRegisterView,custom_logout,profile_view,request_return, product_list
 from myapp.api.resources import ReturnViewSet, PurchaseViewSet, ProductViewSet
 from myapp.api.serializers import CustomAuthToken
-
+from rest_framework.authtoken.views import obtain_auth_token
 
 router = DefaultRouter()
 router.register(r'products', ProductViewSet)
@@ -30,6 +30,7 @@ router.register(r'purchases', PurchaseViewSet)
 router.register(r'returns', ReturnViewSet)
 
 urlpatterns = [
+path('api/token/', obtain_auth_token),
     path('api-token-auth/', CustomAuthToken.as_view()),
     path('api/', include(router.urls)),
 path('product/return/<int:pk>/', ReturnListView.as_view(), name='return_list'),

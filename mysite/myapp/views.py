@@ -1,16 +1,12 @@
-
-
-
-
-from django.urls import reverse_lazy,reverse
+from django.urls import reverse_lazy, reverse
 from django.views import View
 from django.views.generic.edit import FormView, UpdateView, CreateView
 from django.views.generic import ListView
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from .models import Return, Purchase, Product, User
-from .forms import PurchaseForm, UserCreationForm,ProductForm
-from django.contrib.auth import login,logout
+from .forms import PurchaseForm, UserCreationForm, ProductForm
+from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.views.generic import DetailView
@@ -20,8 +16,6 @@ from django.shortcuts import render, redirect
 from django.utils.timezone import now
 from datetime import timedelta
 from django.views.decorators.cache import cache_page
-
-
 
 
 
@@ -40,6 +34,7 @@ def profile_view(request):
         'current_time': now(),
     })
 
+
 def custom_logout(request):
     logout(request)
     return redirect('main')
@@ -51,13 +46,13 @@ class ProductListView(ListView):
     context_object_name = 'products'
     paginate_by = 4
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         print(f"Number of products: {context['products'].count()}")
         for product in context['products']:
             print(f"Product ID: {product.id}")
         return context
+
 
 
 class ProductDetailView(DetailView):
@@ -83,10 +78,10 @@ class ProductDetailView(DetailView):
             quantity = form.cleaned_data['quantity']
             total_price = product.price * quantity
             if request.user.wallet < total_price:
-                messages.error(request, "У вас недостаточно средств для покупки.")
+                messages.error(request, "Недостаточно средств в кошельке.")  # Изменено
                 return self.render_to_response(self.get_context_data(form=form))
             if quantity > product.quantity_in_stock:
-                messages.error(request, "Недостаточно товара на складе.")
+                messages.error(request, "Недостаточное количество товара на складе.")  # Изменено
                 return self.render_to_response(self.get_context_data(form=form))
 
             try:
@@ -108,14 +103,13 @@ class ProductCreateView(CreateView):
     form_class = ProductForm
     template_name = 'product_create.html'
     success_url = reverse_lazy('main')
-    
+
 
 class ProductUpdateView(UpdateView):
     model = Product
     fields = ['name', 'price', 'description', 'quantity_in_stock', 'image']
     template_name = 'product_update.html'
     success_url = reverse_lazy('main')
-
 
 
 class UserRegisterView(FormView):
@@ -139,17 +133,16 @@ class UserRegisterView(FormView):
 def request_return(request, purchase_id):
     purchase = get_object_or_404(Purchase, id=purchase_id, user=request.user)
 
-
     time_since_purchase = now() - purchase.created_at
     if time_since_purchase.total_seconds() > 180:
         messages.error(request, "Возврат невозможен, так как прошло более 3 минут с момента покупки.")
         return redirect('profile')
 
-
     if purchase.returned:
         messages.error(request, "Этот товар уже был возвращен.")
     else:
-        Return.objects.create(user=request.user, product=purchase.product, quantity=purchase.quantity, purchase=purchase)
+        Return.objects.create(user=request.user, product=purchase.product, quantity=purchase.quantity,
+                              purchase=purchase)
         purchase.returned = True
         purchase.save()
         messages.success(request, "Запрос на возврат успешно создан и ожидает подтверждения администратора.")
@@ -170,17 +163,14 @@ class ReturnActionMixin:
         product.quantity_in_stock += return_request.purchase.quantity
         product.save()
 
-
         return_request.purchase.user.wallet += return_request.purchase.get_total_price()
         return_request.purchase.user.save()
-
 
         return_request.purchase.delete()
         return_request.delete()
 
     def reject_return(self, return_request):
         return_request.delete()
-
 
 
 class ReturnListView(UserPassesTestMixin, ListView):
@@ -190,6 +180,7 @@ class ReturnListView(UserPassesTestMixin, ListView):
 
     def test_func(self):
         return self.request.user.is_superuser
+
 
     def post(self, request, *args, **kwargs):
         return_id = request.POST.get('return_id')
@@ -206,30 +197,36 @@ class ReturnListView(UserPassesTestMixin, ListView):
             messages.error(request, "Запрос на возврат не найден.")
         return redirect('return_list')
 
-    #
+
+
+
 
     def approve_return(self, return_request):
         product = return_request.product
         purchase = return_request.purchase
         user = purchase.user
+
         if return_request.quantity > purchase.quantity:
             messages.error(self.request, "Запрос на возврат превышает количество покупки.")
             return
+
         product.reduce_stock(return_request.quantity, is_return=True)
+
         refund_amount = return_request.quantity * product.price
         user.wallet += refund_amount
         user.save()
+
         if return_request.quantity == purchase.quantity:
             purchase.delete()
         else:
             purchase.quantity -= return_request.quantity
             purchase.save()
+
         return_request.delete()
         messages.success(self.request, "Возврат успешно одобрен.")
 
     def reject_return(self, return_request):
         return_request.delete()
-
 
 
 class Login(LoginView):
@@ -239,8 +236,8 @@ class Login(LoginView):
     def get_success_url(self):
         return self.success_url
 
+
 def product_list(request):
     products = Product.objects.all()
     return render(request, 'product_list.html', {'products': products})
-
 

@@ -1,9 +1,10 @@
-
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models, transaction
 from django.utils import timezone
 from django.urls import reverse
 from django.core.exceptions import ValidationError
+from django.db.models import Sum
+
 
 
 class UserManager(BaseUserManager):
@@ -119,7 +120,7 @@ class Return(models.Model):
 
     def clean(self):
         if self.quantity > self.purchase.quantity:
-            raise ValueError("Количество возврата превышает количество покупки.")
+            raise ValidationError("Количество возврата превышает количество покупки.")
 
     def __str__(self):
         return f"Return request by {self.purchase.user.username} for {self.purchase.product.name}"
@@ -127,16 +128,8 @@ class Return(models.Model):
     def get_total_refund(self):
         return self.quantity * self.product.price
 
+   
+
     class Meta:
         verbose_name_plural = "Returns"
-
-
-
-
-
-
-
-
-
-
 

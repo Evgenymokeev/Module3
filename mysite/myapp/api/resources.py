@@ -6,8 +6,8 @@ from rest_framework.generics import ListAPIView
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from .permissions import IsOwnerOrReadOnly
-from .serializers import ProductSerializer,PurchaseSerializer,ReturnSerializer
+from .permission import IsOwnerOrReadOnly
+from .serializers import ProductListSerializer,PurchaseSerializer,ReturnSerializer,ProductDetailSerializer
 from myapp.models import Product, Purchase, Return
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -16,8 +16,12 @@ from django.views.decorators.cache import cache_page
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = (IsOwnerOrReadOnly,IsAuthenticatedOrReadOnly)
+    permission_classes = (IsOwnerOrReadOnly, IsAuthenticatedOrReadOnly)
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ProductListSerializer
+        return ProductDetailSerializer
 
     @method_decorator(cache_page(60))
     def list(self, request, *args, **kwargs):
@@ -27,7 +31,7 @@ class ProductViewSet(viewsets.ModelViewSet):
 class  PurchaseViewSet(viewsets.ModelViewSet):
     queryset = Purchase.objects.all()
     serializer_class = PurchaseSerializer
-    permission_classes = (IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly)
+    permission_classes = (IsAuthenticatedOrReadOnly)
 
     @method_decorator(cache_page(60))
     def list(self, request, *args, **kwargs):

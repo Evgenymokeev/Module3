@@ -6,12 +6,12 @@ class AdminRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_superuser
 
-class ProductAdmin(AdminRequiredMixin, admin.ModelAdmin):
+class ProductAdmin(AdminRequiredMixin,admin.ModelAdmin):
     list_display = ('name', 'price', 'quantity_in_stock', 'created_at', 'updated_at')
     search_fields = ('name',)
     list_filter = ('created_at',)
 
-class ReturnAdmin(AdminRequiredMixin, admin.ModelAdmin):
+class ReturnAdmin(AdminRequiredMixin,admin.ModelAdmin):
     list_display = ('purchase', 'created_at')
     actions = ['approve_return', 'reject_return']
 
@@ -29,7 +29,7 @@ class ReturnAdmin(AdminRequiredMixin, admin.ModelAdmin):
         queryset.delete()
 
 admin.site.register(User)
-admin.site.register(Product, ProductAdmin)
+admin.site.register(Product,ProductAdmin)
 admin.site.register(Purchase)
-admin.site.register(Return, ReturnAdmin)
+admin.site.register(Return,ReturnAdmin)
 

@@ -1,6 +1,6 @@
 from django import forms
 from .models import Product, User, Return, Purchase
-
+from django.core.exceptions import ValidationError
 
 
 
@@ -16,6 +16,11 @@ class ProductForm(forms.ModelForm):
             'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price <= 0:
+            raise ValidationError('Цена должна быть больше нуля.')
+        return price
 
 class UploadImageForm(forms.ModelForm):
     class Meta:
@@ -28,6 +33,12 @@ class AddProduct(forms.Form):
     description = forms.CharField(max_length=1000, widget=forms.Textarea)
     quantity_in_stock = forms.IntegerField(min_value=0)
     image = forms.ImageField(required=False)
+
+    def clean_price(self):
+        price = self.cleaned_data.get('price')
+        if price <= 0:
+            raise ValidationError('Цена должна быть больше нуля.')
+        return price
 
 class UpdateProduct(forms.ModelForm):
     class Meta:
@@ -59,7 +70,39 @@ class CreateProduct(forms.ModelForm):
 class ReturnRequestForm(forms.ModelForm):
     class Meta:
         model = Return
-        fields = ['purchase']
+        fields = ['purchase', 'quantity']
+
+    def clean_purchase(self):
+        purchase = self.cleaned_data.get('purchase')
+
+        if not purchase:
+            raise forms.ValidationError("Invalid purchase selection.")
+
+        if isinstance(purchase, int):  
+            try:
+                purchase = Purchase.objects.get(id=purchase)
+            except Purchase.DoesNotExist:
+                raise forms.ValidationError("Selected purchase does not exist.")
+
+        self.cleaned_data['purchase_object'] = purchase
+        print(f"clean_purchase возвращает: {purchase}")
+        return purchase  # Возвращаем объект вместо его ID
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if hasattr(self, 'cleaned_data') and 'purchase_object' in self.cleaned_data:
+            purchase = self.cleaned_data['purchase_object']
+            instance.product = purchase.product
+            instance.user = purchase.user
+            instance.purchase = purchase
+        if commit:
+            instance.save()
+
+        return instance
+
+
+
+
 
 class UserCreationForm(forms.ModelForm):
     password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
@@ -67,7 +110,7 @@ class UserCreationForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ("username", "email",)
+        fields = ("username", "email")
 
     def clean_password2(self):
         password1 = self.cleaned_data.get("password1")
@@ -76,16 +119,20 @@ class UserCreationForm(forms.ModelForm):
             raise forms.ValidationError("The two password fields didn't match.")
         return password2
 
+
     def save(self, commit=True):
         user = super().save(commit=False)
+        if not self.cleaned_data.get("password1"):
+            raise ValidationError("Password is required.")
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
         return user
 
 
-
 class PurchaseForm(forms.ModelForm):
+    quantity = forms.IntegerField(min_value=1, initial=1)
+
     class Meta:
         model = Purchase
         fields = ['quantity']
@@ -93,17 +140,25 @@ class PurchaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.product = kwargs.pop('product', None)
         self.user = kwargs.pop('user', None)
+
+        if not self.product:
+            raise ValueError("PurchaseForm requires a 'product' instance.")
+        if not self.user:
+            raise ValueError("PurchaseForm requires a 'user' instance.")
+
         super().__init__(*args, **kwargs)
 
-    def clean_quantity(self):
-        quantity = self.cleaned_data.get('quantity')
+    def clean(self):
+        cleaned_data = super().clean()
+        quantity = cleaned_data.get('quantity')
 
+        if not quantity:
+            return cleaned_data
 
         if self.product and quantity > self.product.quantity_in_stock:
-            raise forms.ValidationError("Недостаточное количество товара на складе.")
-
+            self.add_error('quantity', "Недостаточное количество товара на складе.")
 
         if self.user and self.user.wallet < (self.product.price * quantity):
-            raise forms.ValidationError("Недостаточно средств в кошельке.")
+            self.add_error('quantity', "Недостаточно средств в кошельке.")
 
-        return quantity
+        return cleaned_data

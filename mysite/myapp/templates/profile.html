@@ -4,6 +4,15 @@
 <main class="main">
     <div class="profile-container">
         <h1 class="profile-title">User Profile</h1>
+{% if messages %}
+    <div class="message-container">
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
 
 
         <div class="user-details">
